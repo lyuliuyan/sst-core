@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: sst_core
+title: SST Core：RDF 图仓库与 SST 二进制格式实现
+scope:
+    - sst/
+source_files: []
+depends_on: []
+related_to: []

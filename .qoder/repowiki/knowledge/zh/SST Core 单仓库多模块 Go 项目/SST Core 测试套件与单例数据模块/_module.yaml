@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: tests
+title: SST Core 测试套件与单例数据模块
+scope:
+    - sst_test/
+    - singleton/
+source_files: []
+depends_on: []
+related_to:
+    - path: sst_core/repository_remote
+    - path: sstauth

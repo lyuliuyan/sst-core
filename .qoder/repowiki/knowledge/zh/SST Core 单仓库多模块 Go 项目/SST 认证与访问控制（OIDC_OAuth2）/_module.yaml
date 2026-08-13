@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: sstauth
+title: SST 认证与访问控制（OIDC/OAuth2）
+scope:
+    - sstauth/
+source_files: []
+depends_on: []
+related_to:
+    - path: cli
+    - path: mcp_server
+    - path: tests

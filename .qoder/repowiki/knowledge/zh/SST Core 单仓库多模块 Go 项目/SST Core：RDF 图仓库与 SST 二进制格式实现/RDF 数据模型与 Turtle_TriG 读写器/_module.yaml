@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/rdf_io
+title: RDF 数据模型与 Turtle/TriG 读写器
+scope:
+    - sst/rdf.go
+    - sst/rdfreader.go
+    - sst/rdfwrite.go
+source_files: []
+depends_on: []
+related_to: []

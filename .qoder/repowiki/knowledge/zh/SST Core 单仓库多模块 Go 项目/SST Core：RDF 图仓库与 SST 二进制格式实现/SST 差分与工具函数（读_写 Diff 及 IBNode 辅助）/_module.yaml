@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/sst_diff_and_utils
+title: SST 差分与工具函数（读/写 Diff 及 IBNode 辅助）
+scope:
+    - sst/sstreaddiff.go
+    - sst/sstwritediff.go
+    - sst/sstutils.go
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/rdf_writers
+title: RDF 空白节点与集合 Term 序列化
+scope:
+    - sst/rdfwriteblanknodeterm.go
+    - sst/rdfwritecollectionterm.go
+    - sst/rdfwriteprettifyimpl.go
+source_files: []
+depends_on: []
+related_to: []

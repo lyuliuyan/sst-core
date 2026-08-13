@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/core_types_and_models
+title: RDF/SSO 字面量与核心类型定义
+scope:
+    - sst/types.go
+    - sst/literals.go
+    - sst/literaltypes.go
+source_files: []
+depends_on: []
+related_to: []

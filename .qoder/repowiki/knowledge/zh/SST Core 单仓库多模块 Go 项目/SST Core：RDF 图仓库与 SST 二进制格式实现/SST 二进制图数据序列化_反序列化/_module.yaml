@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/sst_file_format
+title: SST 二进制图数据序列化/反序列化
+scope:
+    - sst/sstfile.go
+    - sst/sstreader.go
+    - sst/sstwriter.go
+source_files: []
+depends_on: []
+related_to: []

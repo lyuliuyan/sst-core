@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: bleveproto
+title: Bleve 远程索引 gRPC 协议定义
+scope:
+    - bleveproto/
+source_files: []
+depends_on: []
+related_to:
+    - path: sst_core/repository_remote
+    - path: sst_core/repository_super

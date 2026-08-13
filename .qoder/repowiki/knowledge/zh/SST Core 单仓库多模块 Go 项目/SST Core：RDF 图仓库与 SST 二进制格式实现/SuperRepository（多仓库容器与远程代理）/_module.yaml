@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: sst_core/repository_super
+title: SuperRepository（多仓库容器与远程代理）
+scope:
+    - sst/superlocalrepository.go
+    - sst/superremoterepository.go
+    - sst/repocheckout.go
+source_files: []
+depends_on: []
+related_to:
+    - path: bboltproto
+    - path: bleveproto
+    - path: cli
+    - path: mcp_server

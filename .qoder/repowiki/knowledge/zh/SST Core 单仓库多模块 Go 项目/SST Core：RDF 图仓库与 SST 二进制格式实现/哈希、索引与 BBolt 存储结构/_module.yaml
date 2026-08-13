@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/hashing_and_indexing
+title: 哈希、索引与 BBolt 存储结构
+scope:
+    - sst/hash.go
+    - sst/indexupdate.go
+    - sst/bbolt_structure.go
+source_files: []
+depends_on: []
+related_to: []

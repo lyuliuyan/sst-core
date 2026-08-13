@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/rdf_reader_stages
+title: RDF 读取阶段与行号追踪
+scope:
+    - sst/rdfreaderstage.go
+    - sst/rdfreadlinenumber.go
+    - sst/rdfreadnamedgraph_test.go
+source_files: []
+depends_on: []
+related_to: []

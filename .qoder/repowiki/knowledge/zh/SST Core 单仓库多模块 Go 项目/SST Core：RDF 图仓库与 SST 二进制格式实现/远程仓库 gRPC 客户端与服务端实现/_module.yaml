@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: sst_core/repository_remote
+title: 远程仓库 gRPC 客户端与服务端实现
+scope:
+    - sst/reporemote.go
+    - sst/reporemoteapp.go
+    - sst/reporemotecommit.go
+source_files: []
+depends_on: []
+related_to:
+    - path: bboltproto
+    - path: bleveproto
+    - path: tests

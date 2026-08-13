@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: sst_core/support_utilities
+title: SST 词汇表与文档保险库支持
+scope:
+    - sst/vocabulary.go
+    - sst/vault.go
+    - sst/doc.go
+source_files: []
+depends_on: []
+related_to: []

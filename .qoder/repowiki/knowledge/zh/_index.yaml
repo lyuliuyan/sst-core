@@ -1,0 +1,339 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: main
+nodes_managed: true
+exported_at: "2026-08-12T11:04:22Z"
+modules:
+    "":
+        dir_name: SST Core 单仓库多模块 Go 项目
+        title: SST Core 单仓库多模块 Go 项目
+        scope:
+            - README.md
+            - .gitignore
+            - .golangci.yaml
+            - go.mod
+            - go.sum
+            - doc.go
+            - copyright.tmpl
+            - .clang-format
+            - LICENSE
+        source_files: []
+        children:
+            - bboltproto
+            - bleveproto
+            - cli
+            - defaultderive
+            - examples
+            - mcp_server
+            - sst_core
+            - sstauth
+            - step_transforms
+            - tests
+            - tools
+            - vocabularies
+        depends_on: []
+        related_to: []
+    bboltproto:
+        dir_name: BBolt 远程仓库 gRPC 协议定义
+        title: BBolt 远程仓库 gRPC 协议定义
+        scope:
+            - bboltproto/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: sst_core/repository_remote
+            - path: sst_core/repository_super
+    bleveproto:
+        dir_name: Bleve 远程索引 gRPC 协议定义
+        title: Bleve 远程索引 gRPC 协议定义
+        scope:
+            - bleveproto/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: sst_core/repository_remote
+            - path: sst_core/repository_super
+    cli:
+        dir_name: SST Core CLI 命令行工具
+        title: SST Core CLI 命令行工具
+        scope:
+            - cli/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: sst_core/repository_super
+            - path: sstauth
+    defaultderive:
+        dir_name: SST NamedGraph 默认 Bleve 索引派生器
+        title: SST NamedGraph 默认 Bleve 索引派生器
+        scope:
+            - defaultderive/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: examples
+            - path: vocabularies
+    examples:
+        dir_name: SST Core 示例程序集
+        title: SST Core 示例程序集
+        scope:
+            - examples/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: defaultderive
+            - path: step_transforms
+    mcp_server:
+        dir_name: SST MCP 服务器（Model Context Protocol 工具网关）
+        title: SST MCP 服务器（Model Context Protocol 工具网关）
+        scope:
+            - mcp/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: sst_core/repository_super
+            - path: sstauth
+    sst_core:
+        dir_name: SST Core：RDF 图仓库与 SST 二进制格式实现
+        title: SST Core：RDF 图仓库与 SST 二进制格式实现
+        scope:
+            - sst/
+        source_files: []
+        children:
+            - sst_core/core_types_and_models
+            - sst_core/hashing_and_indexing
+            - sst_core/rdf_formats
+            - sst_core/rdf_io
+            - sst_core/rdf_reader_stages
+            - sst_core/rdf_writers
+            - sst_core/repository_core
+            - sst_core/repository_remote
+            - sst_core/repository_super
+            - sst_core/sst_diff_and_utils
+            - sst_core/sst_file_format
+            - sst_core/stage_and_commit
+            - sst_core/stage_fs_impl
+            - sst_core/support_utilities
+        depends_on: []
+        related_to: []
+    sst_core/core_types_and_models:
+        dir_name: RDF_SSO 字面量与核心类型定义
+        title: RDF/SSO 字面量与核心类型定义
+        scope:
+            - sst/types.go
+            - sst/literals.go
+            - sst/literaltypes.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/hashing_and_indexing:
+        dir_name: 哈希、索引与 BBolt 存储结构
+        title: 哈希、索引与 BBolt 存储结构
+        scope:
+            - sst/hash.go
+            - sst/indexupdate.go
+            - sst/bbolt_structure.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/rdf_formats:
+        dir_name: RDF_Turtle_TriG 词法与流式解析器
+        title: RDF/Turtle/TriG 词法与流式解析器
+        scope:
+            - sst/rdfttl.go
+            - sst/rdftrig.go
+            - sst/rdflex.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/rdf_io:
+        dir_name: RDF 数据模型与 Turtle_TriG 读写器
+        title: RDF 数据模型与 Turtle/TriG 读写器
+        scope:
+            - sst/rdf.go
+            - sst/rdfreader.go
+            - sst/rdfwrite.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/rdf_reader_stages:
+        dir_name: RDF 读取阶段与行号追踪
+        title: RDF 读取阶段与行号追踪
+        scope:
+            - sst/rdfreaderstage.go
+            - sst/rdfreadlinenumber.go
+            - sst/rdfreadnamedgraph_test.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/rdf_writers:
+        dir_name: RDF 空白节点与集合 Term 序列化
+        title: RDF 空白节点与集合 Term 序列化
+        scope:
+            - sst/rdfwriteblanknodeterm.go
+            - sst/rdfwritecollectionterm.go
+            - sst/rdfwriteprettifyimpl.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/repository_core:
+        dir_name: SST 仓库抽象与本地实现（BBolt_Bleve_Flat-File）
+        title: SST 仓库抽象与本地实现（BBolt/Bleve/Flat-File）
+        scope:
+            - sst/repository.go
+            - sst/repolocalbasic.go
+            - sst/repolocalflat.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/repository_remote:
+        dir_name: 远程仓库 gRPC 客户端与服务端实现
+        title: 远程仓库 gRPC 客户端与服务端实现
+        scope:
+            - sst/reporemote.go
+            - sst/reporemoteapp.go
+            - sst/reporemotecommit.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: bboltproto
+            - path: bleveproto
+            - path: tests
+    sst_core/repository_super:
+        dir_name: SuperRepository（多仓库容器与远程代理）
+        title: SuperRepository（多仓库容器与远程代理）
+        scope:
+            - sst/superlocalrepository.go
+            - sst/superremoterepository.go
+            - sst/repocheckout.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: bboltproto
+            - path: bleveproto
+            - path: cli
+            - path: mcp_server
+    sst_core/sst_diff_and_utils:
+        dir_name: SST 差分与工具函数（读_写 Diff 及 IBNode 辅助）
+        title: SST 差分与工具函数（读/写 Diff 及 IBNode 辅助）
+        scope:
+            - sst/sstreaddiff.go
+            - sst/sstwritediff.go
+            - sst/sstutils.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/sst_file_format:
+        dir_name: SST 二进制图数据序列化_反序列化
+        title: SST 二进制图数据序列化/反序列化
+        scope:
+            - sst/sstfile.go
+            - sst/sstreader.go
+            - sst/sstwriter.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/stage_and_commit:
+        dir_name: 工作区暂存、提交与图差异计算
+        title: 工作区暂存、提交与图差异计算
+        scope:
+            - sst/stage.go
+            - sst/commit.go
+            - sst/diff.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/stage_fs_impl:
+        dir_name: StageFS：基于 bbolt 的命名图文件系统抽象
+        title: StageFS：基于 bbolt 的命名图文件系统抽象
+        scope:
+            - sst/stagefs.go
+            - sst/stagefscommon.go
+            - sst/stagefsdatasetsfs.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sst_core/support_utilities:
+        dir_name: SST 词汇表与文档保险库支持
+        title: SST 词汇表与文档保险库支持
+        scope:
+            - sst/vocabulary.go
+            - sst/vault.go
+            - sst/doc.go
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    sstauth:
+        dir_name: SST 认证与访问控制（OIDC_OAuth2）
+        title: SST 认证与访问控制（OIDC/OAuth2）
+        scope:
+            - sstauth/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cli
+            - path: mcp_server
+            - path: tests
+    step_transforms:
+        dir_name: STEP 数据导入_导出与格式转换
+        title: STEP 数据导入/导出与格式转换
+        scope:
+            - step/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: examples
+    tests:
+        dir_name: SST Core 测试套件与单例数据模块
+        title: SST Core 测试套件与单例数据模块
+        scope:
+            - sst_test/
+            - singleton/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: sst_core/repository_remote
+            - path: sstauth
+    tools:
+        dir_name: SST Core 工具集（本体编译器、图形转换器与校验器）
+        title: SST Core 工具集（本体编译器、图形转换器与校验器）
+        scope:
+            - tools/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    vocabularies:
+        dir_name: 预编译词汇表与本体常量库
+        title: 预编译词汇表与本体常量库
+        scope:
+            - vocabularies/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: defaultderive

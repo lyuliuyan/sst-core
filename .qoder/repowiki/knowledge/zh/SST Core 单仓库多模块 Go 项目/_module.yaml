@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: ""
+title: SST Core 单仓库多模块 Go 项目
+scope:
+    - README.md
+    - .gitignore
+    - .golangci.yaml
+    - go.mod
+    - go.sum
+    - doc.go
+    - copyright.tmpl
+    - .clang-format
+    - LICENSE
+source_files: []
+depends_on: []
+related_to: []

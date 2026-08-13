@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: mcp_server
+title: SST MCP 服务器（Model Context Protocol 工具网关）
+scope:
+    - mcp/
+source_files: []
+depends_on: []
+related_to:
+    - path: sst_core/repository_super
+    - path: sstauth
