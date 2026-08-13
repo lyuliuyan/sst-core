@@ -27,3 +27,8 @@ step/testdata/ewhfortest/stepxmlLocalFullRepository/
 .design-docs/
 .env.sst-cli
 .env.sst-test
+
+#编译生成文件
+main.exe
+sst.exe
+

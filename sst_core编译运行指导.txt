@@ -1,0 +1,31 @@
+****************Qoder环境编译************************
+
+一、下载代码
+1) https://github.com/semanticstep/sst-core   fork
+2) clone到本地
+
+
+二、本地Qrder编译
+
+1、安装go
+https://go.dev/
+
+2、添加 go 路径（D:\Program Files\Go\bin）到环境变量 Path，重启电脑
+
+3、qorder 【terminal】终端运行
+go build ./cli/main.go
+
+sst_core\cli 下生成 sst.exe
+
+****************end Qoder环境编译************************
+
+
+总结你遇到的两个问题及解决方法：
+1. go 命令未找到
+Go 安装在 D:\Program Files\Go\bin\`，但未被加入系统 PATH。永久修复：将 D:\Program Files\Go\bin 添加到系统环境变量 PATH 中：
+右键"此电脑" → 属性 → 高级系统设置 → 环境变量
+在"系统变量"中找到 Path，添加 D:\Program Files\Go\bin
+2. 依赖下载超时（proxy.golang.org 被墙）
+默认的 Go 模块代理 proxy.golang.org 在国内无法访问。永久修复：设置 GOPROXY 为国内镜像，在终端中执行：
+& "D:\Program Files\Go\bin\go.exe" env -w GOPROXY https://goproxy.cn,direct
+这条命令会永久写入 Go 的环境配置，以后所有终端会话都会自动生效，无需每次手动设置。完成以上两步后，你就可以直接在任意终端中使用 go build ./cli/main.go 了。
