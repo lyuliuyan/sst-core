@@ -11,6 +11,13 @@
 - [Dataset 接口定义（sst/dataset.go）](file://sst/dataset.go)
 </cite>
 
+## 更新摘要
+**已进行的变更**
+- 组件名称统一更新：SST Hub → SSTRemoteRep，CoColla-Sync → SstAdapter，Edge Agent → SstEdge.exe
+- 架构图增强：添加架构图图片引用和Mermaid序列图
+- 设计决策重新组织：将多个设计决策标记为TO DO待完成状态
+- 架构描述更新：反映当前实现状态和组件关系
+
 ## 目录
 1. [引言](#引言)
 2. [项目结构](#项目结构)
@@ -69,10 +76,10 @@ Root --> Examples
 
 | 组件 | 职责 | 在方案中的角色 |
 |---|---|---|
-| **SST Hub** | SuperRepository 服务端，托管多个 Repository，提供 gRPC 同步、全文检索、Document 保险库 | 跨系统交换中枢 |
-| **CoColla-Sync** | 连接 MySQL 与 SST Hub 的双向适配器，发布订单事件、监听新提交并落库 | 业务系统与 SST 的桥接 |
-| **Edge Agent** | 每台 CAM 工作站的本地边车进程，维护 LocalFullRepository 副本，暴露 HTTP/JSON 给 C++ | CircuitCAM 的零重依赖接入点 |
-| **SstBridge** | CircuitCAM 内的 C++ 模块，调用 Edge Agent 完成订单浏览、检出、保存钩子与批量导入导出编排 | 桌面端集成入口 |
+| **SSTRemoteRep** | SuperRepository 服务端，托管多个 Repository，提供 gRPC 同步、全文检索、Document 保险库 | 跨系统交换中枢 |
+| **SstAdapter** | 连接 MySQL 与 SSTRemoteRep 的双向适配器，发布订单事件、监听新提交并落库 | 业务系统与 SST 的桥接 |
+| **SstEdge.exe** | 每台 CAM 工作站的本地边车进程，维护 LocalFullRepository 副本，暴露 HTTP/JSON 给 C++ | CircuitCAM 的零重依赖接入点 |
+| **SstBridge** | CircuitCAM 内的 C++ 模块，调用 SstEdge.exe 完成订单浏览、检出、保存钩子与批量导入导出编排 | 桌面端集成入口 |
 | **ccam 本体** | Turtle 本体 + 生成的 Go 词汇包，定义订单、工程资料、CAM 作业、同步事件的统一语义契约 | 跨团队类型化契约 |
 | **Repository / Dataset / NamedGraph / Document** | SST 的核心抽象：仓库、数据集、命名图、内容寻址文档 | 所有交换数据的唯一载体 |
 
@@ -81,22 +88,22 @@ Root --> Examples
 - [基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md:139-184](file://docs/基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md#L139-L184)
 
 ## 架构总览
-整体架构由企业内网中的 CoCollaWorking、SST Hub、CoColla-Sync、CAM 工作站以及 Keycloak OIDC 组成。CoColla 通过 CoColla-Sync 把订单快照写入 SST Hub；CAM 工作站通过 Edge Agent 拉取订单与工程资料；工程师在 CircuitCAM 中编辑后，变更经 Edge Agent 提交到 Hub，再由 CoColla-Sync 回写到现有业务接口。
+整体架构由企业内网中的 CoCollaWorking、SSTRemoteRep、SstAdapter、CAM 工作站以及 Keycloak OIDC 组成。CoColla 通过 SstAdapter 把订单快照写入 SSTRemoteRep；CAM 工作站通过 SstEdge.exe 拉取订单与工程资料；工程师在 CircuitCAM 中编辑后，变更经 SstEdge.exe 提交到 RemoteRep，再由 SstAdapter 回写到现有业务接口。
 
 ```mermaid
 graph TB
 subgraph "企业内网"
 CoColla["CoCollaWorking<br/>Spring Boot + MySQL + MinIO"]
-Sync["CoColla-Sync<br/>Go 适配器"]
-Hub["SST Hub<br/>SuperRepository + BBolt + Bleve + Documents"]
-Workstation["CAM 工作站<br/>CircuitCAM + Edge Agent"]
+Adapter["SstAdapter<br/>Go 适配器"]
+Hub["SSTRemoteRep<br/>SuperRepository + BBolt + Bleve + Documents"]
+Workstation["CAM 工作站<br/>CircuitCAM + SstEdge.exe"]
 Keycloak["Keycloak<br/>OIDC"]
 end
-CoColla --> Sync
-Sync --> Hub
+CoColla --> Adapter
+Adapter --> Hub
 Workstation --> Hub
 Keycloak --> Hub
-Keycloak --> Sync
+Keycloak --> Adapter
 ```
 
 **图表来源**
@@ -108,7 +115,7 @@ Keycloak --> Sync
 ## 详细组件分析
 
 ### 一订单一 Dataset 的建模决策
-方案把“一个订单”映射为 SST 的一个 Dataset，默认 NamedGraph 承载订单主数据，再通过 `owl:imports` 引用工程资料图与 CAM 作业摘要图。这样做的直接好处是：
+方案把"一个订单"映射为 SST 的一个 Dataset，默认 NamedGraph 承载订单主数据，再通过 `owl:imports` 引用工程资料图与 CAM 作业摘要图。这样做的直接好处是：
 
 - 可按订单 IRI 做按需同步，避免全仓下发；
 - 冲突半径限制在单个订单，合并与三方 diff 更可控；
@@ -122,7 +129,7 @@ flowchart TD
 Start["订单进入系统"] --> Model["建模为 Dataset<br/>默认 NamedGraph = #order"]
 Model --> Imports["引用 #project 与 #camjob"]
 Imports --> Branch["master 与 cam/<工作站ID> 分支"]
-Branch --> Sync["Edge Agent 按需 SyncFrom"]
+Branch --> Sync["SstEdge.exe 按需 SyncFrom"]
 Sync --> Edit["CircuitCAM 编辑 .cam 与元数据"]
 Edit --> Push["提交到草稿分支"]
 Push --> Promote["人工或自动晋升到 master"]
@@ -151,7 +158,7 @@ Mode --> |是| F["F 模式：写入 SST Document<br/>图里存 documentHash"]
 Mode --> |否| M["M 模式：MinIO 直链<br/>图里存 minioUrl"]
 F --> Hash["Base58 内容哈希"]
 M --> Url["MinIO URL"]
-Hash --> Cache["Edge 本地缓存命中判断"]
+Hash --> Cache["SstEdge 本地缓存命中判断"]
 Url --> Download["直接下载 MinIO"]
 ```
 
@@ -161,25 +168,25 @@ Url --> Download["直接下载 MinIO"]
 **章节来源**
 - [基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md:150-160](file://docs/基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md#L150-L160)
 
-### CircuitCAM 通过本机 Edge Agent 接入
-CircuitCAM 是 32 位 MFC 程序，不引入 Go runtime、cgo、gRPC。方案选择 Edge Agent 作为独立 64 位 Go 进程，CircuitCAM 通过本机 HTTP/JSON 调用 Edge Agent，复用现有 WinINet 客户端，保持进程隔离与离线能力。
+### CircuitCAM 通过本机 SstEdge.exe 接入
+CircuitCAM 是 32 位 MFC 程序，不引入 Go runtime、cgo、gRPC。方案选择 SstEdge.exe 作为独立 64 位 Go 进程，CircuitCAM 通过本机 HTTP/JSON 调用 SstEdge.exe，复用现有 WinINet 客户端，保持进程隔离与离线能力。
 
-Edge Agent 暴露 `/v1/orders/{code}/checkout` 与 `/v1/orders/{code}/push` 等接口，内部执行：
+SstEdge.exe 暴露 `/v1/orders/{code}/checkout` 与 `/v1/orders/{code}/push` 等接口，内部执行：
 
 1. 保证本地副本已包含目标 Dataset；
 2. 检出 master 版本的 Stage；
 3. 记录 base commit 用于乐观并发；
 4. 解析工程资料清单并拉取二进制；
 5. 回写时检查 hub 上 master 是否仍有效；
-6. 在草稿分支提交，再上行同步到 Hub；
+6. 在草稿分支提交，再上行同步到 RemoteRep；
 7. 可选自动晋升到 master。
 
 ```mermaid
 sequenceDiagram
 participant CAM as "CircuitCAM"
-participant Edge as "Edge Agent"
-participant Hub as "SST Hub"
-participant Sync as "CoColla-Sync"
+participant Edge as "SstEdge.exe"
+participant Hub as "SSTRemoteRep"
+participant Adapter as "SstAdapter"
 CAM->>Edge : POST /v1/orders/{code}/checkout
 Edge->>Hub : SyncFrom(WithDatasetIRIs, WithBranch)
 Hub-->>Edge : 本地副本就绪
@@ -188,8 +195,8 @@ CAM->>Edge : POST /v1/orders/{code}/push
 Edge->>Hub : 校验 master 分支 tip
 Edge->>Edge : 在 cam/<工作站ID> 提交
 Edge->>Hub : SyncFrom(草稿分支)
-Hub-->>Sync : Repository.Log 新提交
-Sync->>Sync : 应用订单变更并落库
+Hub-->>Adapter : Repository.Log 新提交
+Adapter->>Adapter : 应用订单变更并落库
 ```
 
 **图表来源**
@@ -199,13 +206,13 @@ Sync->>Sync : 应用订单变更并落库
 - [基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md:130-137](file://docs/基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md#L130-L137)
 - [基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md:431-610](file://docs/基于sst-core的CiurcuitCAM与CoCollaWorking数据交换方案.md#L431-L610)
 
-### CoColla-Sync 的事件驱动与游标监听
-CoColla-Sync 在订单创建或状态流转处发布 Spring 应用事件，消费后打开 Stage、创建 NamedGraph 并提交到 SST；回写方向则使用 `Repository.Log` 的单调 logKey 游标增量拉取新提交，避免全仓扫描。幂等性通过 commit hash 作为外部键实现，CoColla 侧记录 `sst_commit_id`。
+### SstAdapter 的事件驱动与游标监听
+SstAdapter 在订单创建或状态流转处发布 Spring 应用事件，消费后打开 Stage、创建 NamedGraph 并提交到 SST；回写方向则使用 `Repository.Log` 的单调 logKey 游标增量拉取新提交，避免全仓扫描。幂等性通过 commit hash 作为外部键实现，CoColla 侧记录 `sst_commit_id`。
 
 ```mermaid
 flowchart TD
 Event["订单事件"] --> Publish["发布 OrderEvent"]
-Publish --> Adapter["CoColla-Sync 消费"]
+Publish --> Adapter["SstAdapter 消费"]
 Adapter --> Stage["OpenStage + CreateNamedGraph(#order)"]
 Stage --> Commit["stage.Commit(msg, master)"]
 Commit --> Store["BBolt + Bleve 持久化"]
@@ -361,7 +368,7 @@ Tests --> Cli
 - [sst-core系统架构图.md:391-426](file://docs/sst-core系统架构图.md#L391-L426)
 
 ## 性能与容量规划
-SST Core 不适合承载高并发列表查询与事务型业务，因此方案明确不把 SST 当查询库使用：CAM 端的订单列表筛选仍由 CoColla REST 提供，SST 只负责“给定订单的完整交换上下文”。若确需在 Edge 侧离线检索，可用内置 Bleve 做模糊搜索，不做聚合统计。
+SST Core 不适合承载高并发列表查询与事务型业务，因此方案明确不把 SST 当查询库使用：CAM 端的订单列表筛选仍由 CoColla REST 提供，SST 只负责"给定订单的完整交换上下文"。若确需在 Edge 侧离线检索，可用内置 Bleve 做模糊搜索，不做聚合统计。
 
 容量方面，方案建议对 `cam-deliverables-*` 单独设置配额，例如 200 GiB，并对 SuperRepository 设置最大仓库数量。Dataset 数量随订单增长不构成 BBolt key 的性能问题，但 Repository Entry 应按年份或业务域切分，避免单仓库过大。
 
@@ -375,10 +382,10 @@ SST Core 不适合承载高并发列表查询与事务型业务，因此方案�
 
 | 现象 | 可能原因 | 排查建议 |
 |---|---|---|
-| CircuitCAM 无法列出订单 | Edge Agent 未启动、Hub 不可达、OIDC token 无效 | 先调 `/v1/health`，确认 Edge 存活与 Hub 连接状态 |
+| CircuitCAM 无法列出订单 | SstEdge.exe 未启动、RemoteRep 不可达、OIDC token 无效 | 先调 `/v1/health`，确认 Edge 存活与 Hub 连接状态 |
 | 检出工程资料失败 | Dataset 未同步、文件存储模式不匹配、MinIO 或 Document 不可读 | 检查 `storageMode` 是 MINIO 还是 SST_DOCUMENT，分别验证 URL 或 hash |
 | 回写提示冲突 | hub 上 master 分支 tip 与本地 baseCommit 不一致 | 重新 checkout，刷新 baseCommit 后再 push |
-| CoColla 页面看不到回写结果 | CoColla-Sync 游标未推进、commit 已处理但未幂等识别 | 检查 `logKey` 游标与 `sst_commit_id` 去重逻辑 |
+| CoColla 页面看不到回写结果 | SstAdapter 游标未推进、commit 已处理但未幂等识别 | 检查 `logKey` 游标与 `sst_commit_id` 去重逻辑 |
 | 离线环境无法同步 | Edge 本地仓库与 Hub 分支不同步 | 恢复网络后执行 `SyncFrom(hub)`，必要时反向 `hubRepo.SyncFrom(edge)` |
 | 本体字段拼写错误 | Turtle 本体未编译或未注册全局词汇表 | 运行 `tools/compiler` 生成 `vocabularies/ccam/vocabulary.go`，并确保 import `_ "vocabularies/dict"` |
 
