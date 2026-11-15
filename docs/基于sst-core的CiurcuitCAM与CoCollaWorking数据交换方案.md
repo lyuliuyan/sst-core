@@ -77,18 +77,19 @@
 ## 2. 总体架构
 
 ### 2.1 架构图
+![架构图](/docs/IMG/基于sst-core的数据交换架构图.png)
 
 ```
 ┌─────────────────────────────── 企业内网 / 私有云 ────────────────────────────────┐
 │                                                                                │
 │  ┌──────────────────────┐         ┌──────────────────────────────────────┐     │
-│  │  CoCollaWorking      │         │            SST Hub (Go)              │     │
+│  │  CoCollaWorking      │         │            SSTRemoteRep (Go)              │     │
 │  │  Spring Boot         │         │  sst.NewSuperServer()                │     │
 │  │  ┌────────────────┐  │         │  ┌────────────────────────────────┐  │     │
 │  │  │ order module   │  │  REST   │  │ SuperRepository                │  │     │
-│  │  │  cocolla_order │◄─┼────────►│  │  ├─ shared-ontology  (RO)      │  │     │
-│  │  │  cocolla_order_│  │  (内部) │  │  ├─ cocolla-orders    ← 一订单一Dataset
-│  │  │  project_files │  │         │  │  └─ cam-projects               │  │     │
+│  │  │  cocolla_order │◄─┼────────►│  │  ├─ SharedOntology  (RO)      │  │     │
+│  │  │  cocolla_order_│  │  (内部) │  │  ├─ CocollaData    ← 一订单一Dataset
+│  │  │  project_files │  │         │  │  └─ CAMData               │  │     │
 │  │  └───────┬────────┘  │         │  └────────────────────────────────┘  │     │
 │  │          │           │         │  BBolt + Bleve + Documents(vault)    │     │
 │  │  ┌───────▼────────┐  │         │  gRPC :5581 (TLS) + OIDC             │     │
@@ -98,7 +99,7 @@
 │             │ ①发布订单快照 / ④回写落库        │ ②拉取订单  ③提交工程变更        │
 │             │                                 │                                 │
 │  ┌──────────┴───────────┐         ┌───────────┴──────────────────────────┐      │
-│  │  CoColla-Sync (Go)   │         │  CAM 工作站                            │      │
+│  │  SstAdapter (Go)   │         │  CAM 工作站                            │      │
 │  │  sst-core as library │         │ ┌──────────────┐  ┌────────────────┐  │      │
 │  │  ├ 订单变更 → Commit │         │ │ CircuitCAM   │─►│ sst-edge.exe   │  │      │
 │  │  ├ SST 新 Commit →   │  HTTP   │ │ (MFC x86)    │  │ (Go, 64bit)    │  │      │
@@ -117,17 +118,23 @@
 
 | 组件 | 语言/形态 | 部署位置 | 职责 | 是否新增 |
 |------|-----------|----------|------|----------|
-| **SST Hub** | Go 进程，引入 `sst-core`，`sst.NewSuperServer()` | 服务器 1 台（容器/裸机） | SuperRepository 服务端；版本存储、全文检索、Document 库、gRPC 同步 | 新增（薄封装） |
-| **CoColla-Sync** | Go 服务，引入 `sst-core` | 与 CoColla 同网段 | MySQL ⇄ SST 双向适配器；对 Java 暴露 REST；对 SST 是 gRPC 客户端 | 新增 |
-| **Edge Agent（`sst-edge.exe`）** | Go 单文件可执行程序 | 每台 CAM 工作站 | 本地 `LocalFullRepository` 副本 + HTTP/JSON 服务 + 定时/触发同步 + 文件缓存目录 | 新增 |
+| **SSTRemoteRep** | Go 进程，引入 `sst-core`，`sst.NewSuperServer()` | 服务器 1 台（容器/裸机） | SuperRepository 服务端；版本存储、全文检索、Document 库、gRPC 同步 | 新增（薄封装） |
+| **SstAdapter** | Go 服务，引入 `sst-core` | 与 CoColla 同网段 | MySQL ⇄ SST 双向适配器；对 CoCollaWorking(Java) 暴露 REST； 对 SST 是 gRPC 客户端 | 新增 |
+| **Edge Agent（`SstEdge.exe`）** | Go 单文件可执行程序 | 每台 CAM 工作站 | 本地 `LocalFullRepository` 副本 + HTTP/JSON 服务 + 定时/触发同步 + 文件缓存目录 | 新增 |
 | **SstBridge（CircuitCAM 模块）** | C++ 类库 | CircuitCAM.exe 内 | 调 Edge Agent HTTP；订单浏览对话框；保存钩子；批量导入导出编排 | 新增目录 `CircuitCAM\SstBridge\` |
-| **cocolla-sst 模块** | Java | `cocolla-module-biz` 内 | 订单事件发布、工程版本查询、回写落库适配 | 新增包 |
-| **ccam 本体** | Turtle + 生成的 Go 词汇包 | Git + SST `shared-ontology` | 统一语义契约 | 新增 |
+| **CocollaSst 模块** | Java | `cocolla-module-biz` 内 | 订单事件发布、工程版本查询、回写落库适配 | 新增包 |
+| **CocollaWorking 本体** | Turtle + 生成的 Go 词汇包 | Git + SST `shared-ontology` | 统一语义契约 | 新增 |
 | Keycloak | 现成中间件 | 服务器 | OIDC，为 CoColla-Sync / Edge 发 token | 建议新增（可后期） |
 
 ### 2.3 关键设计决策（ADR 摘要）
 
-#### D1：CircuitCAM 通过 **本机 Edge Agent + HTTP/JSON** 接入，而不是直接链接 sst-core
+#### 不把 SST 当查询库用
+
+CAM 端"按客户/日期/状态筛订单"这类列表查询**仍由 CoColla REST 提供**（MySQL 强项），SST 只负责"给定订单的完整交换上下文"。
+若确需在 Edge 侧离线检索，用 SST 自带的 `repo.Bleve()`（Bleve 全文索引）做**模糊搜索**，不做聚合统计。
+
+
+#### CircuitCAM 通过 **本机 Edge Agent + HTTP/JSON** 接入，而不是直接链接 sst-core
 
 | 备选 | 说明 | 结论 |
 |------|------|------|
@@ -136,18 +143,8 @@
 | C. **Edge Agent 边车进程 + 127.0.0.1 HTTP/JSON** | C++ 只发 HTTP；Go 侧承担全部 SST 复杂度 | ✅ **采用**。复用 CircuitCAM 现成的 `CHTMLRequestProcessor`（`CircuitCAM\HTMLRequestProcessor.h`），零新增第三方依赖，进程隔离，天然支持离线缓存 |
 | D. 共享目录 + 文件交换 | 用 `LocalFlatRepository` 的 `.sst` 文件目录 | ✅ 保留为**离线兜底**（见 4.5），不作为主通道 |
 
-#### D2：**一个订单一 Dataset**
 
-SST 的 Dataset 由"默认 NamedGraph 的 IRI"标识，UUID 由 IRI 派生。把订单建模为 Dataset 后：
-
-- `Repository.SyncFrom(ctx, hub, sst.WithDatasetIRIs(orderIRI))` 可**只同步这一张订单**到某台 CAM 工作站，实现按需下发与最小权限；
-- 冲突半径 = 单个订单，`Dataset.FindCommonParentRevision` 只在订单内做三方合并；
-- 订单归档 = 移动分支指针，历史仍可 `CheckoutCommit` 回放；
-- 权限可映射到 `SuperRepository.SetQuota(ctx, name, maxSizeBytes)` + RBAC。
-
-代价：Dataset 数量 = 订单数量（一年数万）。SST 的 Dataset 只是 BBolt 里的若干 key，不构成性能问题；但需要**按年份/客户切分 Repository Entry**（见 3.4）以避免单仓库过大。
-
-#### D3：**工程文件双模式存储**（元数据永远在图里，二进制二选一或两者都有）
+#### **工程文件双模式存储**（元数据永远在图里，二进制二选一或两者都有）(TO DO:)
 
 | 模式 | 二进制位置 | 适用 |
 |------|-----------|------|
@@ -158,11 +155,24 @@ SST 的 Dataset 由"默认 NamedGraph 的 IRI"标识，UUID 由 IRI 派生。把
 
 > 说明：`Repository.DocumentSet(ctx, mimeType, *bufio.Reader)` 以流式写入，内容寻址返回 `Hash`，重复上传同一内容天然幂等；`Document(ctx, hash, nil)` 可只取 `DocumentInfo`（`Hash/MIMEType/Author/Timestamp/Size`）判断本地缓存是否命中。
 
-#### D4：CoColla 侧**事件驱动发布 + 游标监听回写**
+
+#### CoColla 侧**事件驱动发布 + 游标监听回写** (TO DO:)
 
 - 发布：在订单创建/状态流转处（`OrderServiceImpl`）发 Spring 应用事件，CoColla-Sync 消费并 `Commit` 到 SST；
 - 回写：CoColla-Sync 用 `Repository.Log(ctx, start, end)` 的**单调 logKey 游标**增量拉取新提交，避免全仓扫描；
 - 幂等：SST commit hash 作为外部幂等键，CoColla 侧记录 `sst_commit_id`（新增列或新表 `cocolla_order_sst_link`）。
+
+
+#### **一个订单一 Dataset**  (TO DO:)
+
+SST 的 Dataset 由"默认 NamedGraph 的 IRI"标识，UUID 由 IRI 派生。把订单建模为 Dataset 后：
+
+- `Repository.SyncFrom(ctx, hub, sst.WithDatasetIRIs(orderIRI))` 可**只同步这一张订单**到某台 CAM 工作站，实现按需下发与最小权限；
+- 冲突半径 = 单个订单，`Dataset.FindCommonParentRevision` 只在订单内做三方合并；
+- 订单归档 = 移动分支指针，历史仍可 `CheckoutCommit` 回放；
+- 权限可映射到 `SuperRepository.SetQuota(ctx, name, maxSizeBytes)` + RBAC。
+
+代价：Dataset 数量 = 订单数量（一年数万）。SST 的 Dataset 只是 BBolt 里的若干 key，不构成性能问题；但需要**按年份/客户切分 Repository Entry**（见 3.4）以避免单仓库过大。
 
 #### D5：分支策略
 
@@ -178,10 +188,6 @@ Edge 侧始终在 `cam/<workstationId>` 上提交；合并到 `master` 由 CoCol
 #### D6：本体用 `tools/compiler` 编译为 Go 词汇包（早绑定）
 
 `tools/compiler` 会把 Turtle 本体连同 OWL 微型推理器的类包含闭包生成为 `vocabularies/ccam/vocabulary.go`，运行期获得 `ElementInfo`、`AsKind_*` 与 domain/range 元数据，并可被 `tools/validate` 的 SHACL 式校验（`rdf_type` / `domain_range` / `functional_property`）消费。相比散落的 `sst.IRI("http://...")` 字符串，可杜绝拼写漂移——**跨团队契约必须由类型保证**。
-
-#### D7：不把 SST 当查询库用
-
-CAM 端"按客户/日期/状态筛订单"这类列表查询**仍由 CoColla REST 提供**（MySQL 强项），SST 只负责"给定订单的完整交换上下文"。若确需在 Edge 侧离线检索，用 SST 自带的 `repo.Bleve()`（Bleve 全文索引）做**模糊搜索**，不做聚合统计。
 
 ---
 
@@ -402,6 +408,27 @@ SuperRepository "cocolla-hub"                        (SST Hub, gRPC :5581)
 ## 4. 端到端业务流程
 
 ### 4.1 流程 A：订单下发（CoColla → SST Hub → CircuitCAM）
+
+## mermaid 序列图
+```mermaid
+sequenceDiagram
+participant ui as "CoColla UI"
+participant CLI as "vue-cli-service"
+participant VConf as "vue.config.js"
+participant Babel as "babel.config.js"
+participant W as "Webpack"
+participant P as "插件(Compression/Terser)"
+participant Out as "dist/*"
+Dev->>CLI : 执行 build/serve (mode)
+CLI->>VConf : 读取配置
+VConf->>W : chainWebpack/ configureWebpack
+VConf->>P : 启用压缩/别名/规则
+CLI->>Babel : 解析 .js/.vue
+Babel-->>W : 转译后的模块
+W-->>Out : 输出静态资源
+Note over VConf,Out : 生产环境开启压缩、关闭 console、可选 gzip
+```
+
 
 ```
 CoColla UI        OrderServiceImpl       CoColla-Sync          SST Hub           sst-edge.exe        CircuitCAM
